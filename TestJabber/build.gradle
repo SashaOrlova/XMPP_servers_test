@@ -21,6 +21,8 @@ dependencies {
     compile 'xpp3:xpp3:1.1.4c'
     compile 'xpp3:xpp3_xpath:1.1.4c'
     compile 'xpp3:xpp3_min:1.1.4c'
+    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation 'org.knowm.xchart:xchart:3.5.4'
 }
 
 group = 'TestJabber'
