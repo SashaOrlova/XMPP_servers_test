@@ -15,7 +15,11 @@ public class ConfigParser {
     private static final String CONFIG_NAME = "local.conf";
 
     public static MainConfig readConfig() throws IOException {
-        String configContent = new String(Files.readAllBytes(Paths.get(ConfigParser.CONFIG_NAME)));
+        return readConfig(ConfigParser.CONFIG_NAME);
+    }
+
+    public static MainConfig readConfig(String fileName) throws IOException {
+        String configContent = new String(Files.readAllBytes(Paths.get(fileName)));
         return (new Gson()).fromJson(configContent, MainConfig.class);
     }
 
@@ -41,7 +45,7 @@ public class ConfigParser {
      * @param ipAddress
      * @return
      */
-    private static boolean validateIPaddress(String ipAddress) {
+    public static boolean validateIPaddress(String ipAddress) {
         if (ipAddress.equals("localhost")) {
             return true;
         }

@@ -22,7 +22,14 @@ public class Plot extends Thread {
 
     @Override
     public void run() {
-        final XYChart chart = QuickChart.getChart("95 percentile", "Number", "Time", "Messages", new double[1], new double[1]);
+        final XYChart chart = QuickChart.getChart(
+                "percentiles",
+                "Number",
+                "Time",
+                "Messages",
+                new double[1],
+                new double[1]
+        );
 
         final SwingWrapper<XYChart> sw = new SwingWrapper<>(chart);
         sw.displayChart();
@@ -34,9 +41,14 @@ public class Plot extends Thread {
                 Interpreter.reportAboutError("interrupt ui thread");
             }
 
-            final double[][] data = getData(queue);
+            final double[][] dataPersentile95 = getData(queue, 0.95);
+            final double[][] dataPersentile90 = getData(queue, 0.90);
+            final double[][] dataPersentile85 = getData(queue, 0.85);
 
-            chart.updateXYSeries("Messages", data[0], data[1], null);
+
+            chart.updateXYSeries("Persentile95", dataPersentile95[0], dataPersentile95[1], null);
+            chart.updateXYSeries("Persentile90", dataPersentile90[0], dataPersentile90[1], null);
+            chart.updateXYSeries("Persentile85", dataPersentile85[0], dataPersentile85[1], null);
             sw.repaintChart();
         }
     }
@@ -47,12 +59,12 @@ public class Plot extends Thread {
      * @param queue
      * @return
      */
-    private static double[][] getData(Queue<Long> queue) {
+    private static double[][] getData(Queue<Long> queue, double percentile) {
         Object[] rowData = queue.toArray();
         double[] data = convertToDouble(rowData);
 
         Arrays.sort(data);
-        double[] percentilesData = Arrays.copyOfRange(data, (int)(data.length*0.95), data.length);
+        double[] percentilesData = Arrays.copyOfRange(data, (int)(data.length*percentile), data.length);
         for (int i = 0; i < percentilesData.length; i++) {
             percentilesData[i] = Math.ceil(percentilesData[i]/1000)*1000;
         }

@@ -38,10 +38,25 @@ public class MainConfig {
      */
     private int maxWaitTime;
 
-    public MainConfig(int instanceCount, int sendingMessagesCount, int usersCount) {
+    public MainConfig(int instanceCount,
+                      int sendingMessagesCount,
+                      int usersCount,
+                      InstanceConfig[] instances,
+                      String serviceName,
+                      String serviceIP,
+                      int sendingDelay,
+                      int updateTime,
+                      int maxWaitTime
+                      ) {
         this.instanceCount = instanceCount;
         this.sendingMessagesCount = sendingMessagesCount;
         this.usersCount = usersCount;
+        this.instances = instances;
+        this.serviceName = serviceName;
+        this.serviceIP = serviceIP;
+        this.sendingDelay = sendingDelay;
+        this.updateTime = updateTime;
+        this.maxWaitTime = maxWaitTime;
     }
 
     public InstanceConfig[] getInstances() {
