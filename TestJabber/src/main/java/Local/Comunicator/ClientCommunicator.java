@@ -58,7 +58,7 @@ public class ClientCommunicator {
     /**
      * launch tests in all clients
      */
-    public void startTesting(final Queue<Long> globalQueue) throws IOException {
+    public void startTesting(final Queue<Long> globalQueue) {
         final AtomicInteger atomicInt = new AtomicInteger(0);
 
         for (final Client client: clients) {

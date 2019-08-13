@@ -26,9 +26,13 @@ public class Plot extends Thread {
                 "percentiles",
                 "Number",
                 "Time",
-                "Messages",
+                new String[] {
+                        "Persentile95",
+                        "Persentile90",
+                        "Persentile85"
+                },
                 new double[1],
-                new double[1]
+                new double[][] {{1}, {1}, {1}}
         );
 
         final SwingWrapper<XYChart> sw = new SwingWrapper<>(chart);
@@ -36,7 +40,7 @@ public class Plot extends Thread {
 
         while (true) {
             try {
-                Thread.sleep(config.getUpdateTime());
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 Interpreter.reportAboutError("interrupt ui thread");
             }
@@ -53,12 +57,17 @@ public class Plot extends Thread {
         }
     }
 
-    /**
-     * get data from global queue
-     * only data for drawing
-     * @param queue
-     * @return
-     */
+    public static void main(String[] args) {
+        Plot plot = new Plot(null, null);
+        plot.start();
+    }
+
+        /**
+         * get data from global queue
+         * only data for drawing
+         * @param queue
+         * @return
+         */
     private static double[][] getData(Queue<Long> queue, double percentile) {
         Object[] rowData = queue.toArray();
         double[] data = convertToDouble(rowData);

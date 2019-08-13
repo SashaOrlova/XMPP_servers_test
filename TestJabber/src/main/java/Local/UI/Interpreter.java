@@ -14,15 +14,13 @@ public class Interpreter {
 
     private static final String START = "start";
     private static final String LOAD_CONFIG = "load config";
+    private static final String PARSE_CONFIG = "parse config";
     private static final String START_TEST = "start test";
     private static final String EXIT = "exit";
 
 
     public static void main(String[] args) throws Exception {
-        MainConfig config = ConfigParser.readConfig();
-        if (!ConfigParser.validateConfig(config)) {
-            Interpreter.reportAboutError("wrong config");
-        }
+        MainConfig config = null;
 
         ClientCommunicator communicator = new ClientCommunicator();
         Scanner in = new Scanner(System.in);
@@ -32,6 +30,12 @@ public class Interpreter {
 
             switch (command) {
                 case START:
+                    if (config == null) {
+                        config = ConfigParser.readConfig();
+                    }
+                    if (!ConfigParser.validateConfig(config)) {
+                    Interpreter.reportAboutError("wrong config");
+                    }
                     communicator.startCommunication(config);
                     break;
 
@@ -44,6 +48,10 @@ public class Interpreter {
                     communicator.startTesting(globalQueue);
                     Thread ui = new Plot(config, globalQueue);
                     ui.start();
+                    break;
+
+                case PARSE_CONFIG:
+                    config = ConfigParser.readConfig(in);
                     break;
 
                 case EXIT:
