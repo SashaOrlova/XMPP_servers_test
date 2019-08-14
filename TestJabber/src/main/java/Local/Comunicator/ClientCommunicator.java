@@ -49,7 +49,9 @@ public class ClientCommunicator {
                     clientsCounter,
                     clientsCounter + stepSize,
                     this.config.getUsersCount(),
-                    this.config.getSendingMessagesCount());
+                    this.config.getSendingMessagesCount(),
+                    this.config.getMaxWaitTime()
+            );
             clientsCounter += stepSize;
             client.sendConfig(config);
         }

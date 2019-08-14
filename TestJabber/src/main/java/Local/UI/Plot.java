@@ -1,14 +1,9 @@
 package Local.UI;
 
 import Local.Configuration.MainConfig;
-import org.knowm.xchart.QuickChart;
-import org.knowm.xchart.SwingWrapper;
-import org.knowm.xchart.XYChart;
+import org.knowm.xchart.*;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 
 public class Plot extends Thread {
     private MainConfig config;
@@ -22,37 +17,44 @@ public class Plot extends Thread {
 
     @Override
     public void run() {
-        final XYChart chart = QuickChart.getChart(
-                "percentiles",
-                "Number",
-                "Time",
-                new String[] {
-                        "Persentile95",
-                        "Persentile90",
-                        "Persentile85"
-                },
-                new double[1],
-                new double[][] {{1}, {1}, {1}}
-        );
+        final CategoryChart chart = new CategoryChartBuilder()
+                .width(800)
+                .height(600)
+                .title("Score Histogram")
+                .xAxisTitle("Score")
+                .yAxisTitle("Number")
+                .build();
 
-        final SwingWrapper<XYChart> sw = new SwingWrapper<>(chart);
+        final SwingWrapper<CategoryChart> sw = new SwingWrapper<>(chart);
+        chart.addSeries("Persentile 95", new int[]{1}, new int[]{1});
+        chart.addSeries("Persentile 85", new int[]{1}, new int[]{1});
+        chart.addSeries("Persentile 90", new int[]{1}, new int[]{1});
+
         sw.displayChart();
 
         while (true) {
             try {
-                Thread.sleep(100);
+                Thread.sleep(config.getUpdateTime());
             } catch (InterruptedException e) {
                 Interpreter.reportAboutError("interrupt ui thread");
             }
 
-            final double[][] dataPersentile95 = getData(queue, 0.95);
-            final double[][] dataPersentile90 = getData(queue, 0.90);
-            final double[][] dataPersentile85 = getData(queue, 0.85);
+            final Integer[][] dataPersentile95 = getData(queue, 0.95);
+            final Integer[][] dataPersentile90 = getData(queue, 0.90);
+            final Integer[][] dataPersentile85 = getData(queue, 0.85);
 
-
-            chart.updateXYSeries("Persentile95", dataPersentile95[0], dataPersentile95[1], null);
-            chart.updateXYSeries("Persentile90", dataPersentile90[0], dataPersentile90[1], null);
-            chart.updateXYSeries("Persentile85", dataPersentile85[0], dataPersentile85[1], null);
+            if (dataPersentile95[0] == null ||
+                    dataPersentile95[1] == null ||
+                    dataPersentile90[0] == null ||
+                    dataPersentile90[1] == null ||
+                    dataPersentile85[1] == null ||
+                    dataPersentile85[0] == null
+            ) {
+                Interpreter.reportAboutError("null in plot");
+            }
+            chart.updateCategorySeries("Persentile 95", Arrays.asList(dataPersentile95[0]), Arrays.asList(dataPersentile95[1]), null);
+            chart.updateCategorySeries("Persentile 90", Arrays.asList(dataPersentile90[0]), Arrays.asList(dataPersentile90[1]), null);
+            chart.updateCategorySeries("Persentile 85", Arrays.asList(dataPersentile85[0]), Arrays.asList(dataPersentile85[1]), null);
             sw.repaintChart();
         }
     }
@@ -68,19 +70,22 @@ public class Plot extends Thread {
          * @param queue
          * @return
          */
-    private static double[][] getData(Queue<Long> queue, double percentile) {
+    private static Integer[][] getData(Queue<Long> queue, double percentile) {
         Object[] rowData = queue.toArray();
-        double[] data = convertToDouble(rowData);
+        int[] data = convertToDouble(rowData);
 
         Arrays.sort(data);
-        double[] percentilesData = Arrays.copyOfRange(data, (int)(data.length*percentile), data.length);
+        int startIndex = data.length > 1 ? Math.min(data.length - 1, (int)(data.length*percentile)) : 0;
+
+        int[] percentilesData = Arrays.copyOfRange(data, startIndex, data.length);
+        int coeff = 500;
         for (int i = 0; i < percentilesData.length; i++) {
-            percentilesData[i] = Math.ceil(percentilesData[i]/1000)*1000;
+            percentilesData[i] = (int)Math.ceil((double)percentilesData[i]/coeff)*coeff;
         }
 
-        HashMap<Double, Integer> counter = new HashMap<>();
-        for (double number: percentilesData) {
-            if (counter.containsValue(number)) {
+        HashMap<Integer, Integer> counter = new HashMap<>();
+        for (int number: percentilesData) {
+            if (counter.containsKey(number)) {
                 int newCounter = counter.get(number) + 1;
                 counter.put(number, newCounter);
             } else {
@@ -88,17 +93,18 @@ public class Plot extends Thread {
             }
         }
 
-        double[] count = new double[counter.size()];
-        double[] value = new double[counter.size()];
+        Integer[] count = new Integer[counter.size()];
+        Integer[] value = new Integer[counter.size()];
         int arrayIndex = 0;
-        for (Map.Entry<Double, Integer> entry : counter.entrySet()) {
-            Double timestamp = entry.getKey();
+        for (Map.Entry<Integer, Integer> entry : counter.entrySet()) {
+            Integer timestamp = entry.getKey();
             Integer number = entry.getValue();
             count[arrayIndex] = number;
             value[arrayIndex] = timestamp;
+            arrayIndex++;
         }
 
-        return new double[][] {count, value};
+        return new Integer[][] {value, count};
     }
 
     /**
@@ -106,10 +112,10 @@ public class Plot extends Thread {
      * @param data
      * @return
      */
-    private static double[] convertToDouble(Object[] data) {
-        double[] convertedData = new double[data.length];
+    private static int[] convertToDouble(Object[] data) {
+        int[] convertedData = new int[data.length];
         for (int i = 0; i < data.length; i++) {
-            convertedData[i] = ((Long)data[i]).doubleValue();
+            convertedData[i] = ((Long)data[i]).intValue();
         }
 
         return convertedData;

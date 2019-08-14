@@ -55,7 +55,13 @@ public class Interpreter {
                     break;
 
                 case EXIT:
-                    return;
+                    System.exit(0);
+                    break;
+
+                default:
+                    System.out.println("Unknown command");
+                    break;
+
             }
         }
     }
