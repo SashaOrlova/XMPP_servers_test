@@ -26,9 +26,9 @@ public class Plot extends Thread {
                 .build();
 
         final SwingWrapper<CategoryChart> sw = new SwingWrapper<>(chart);
-        chart.addSeries("Persentile 95", new int[]{1}, new int[]{1});
-        chart.addSeries("Persentile 85", new int[]{1}, new int[]{1});
-        chart.addSeries("Persentile 90", new int[]{1}, new int[]{1});
+        chart.addSeries("Percentile 95", new int[]{1}, new int[]{1});
+        chart.addSeries("Percentile 85", new int[]{1}, new int[]{1});
+        chart.addSeries("Percentile 90", new int[]{1}, new int[]{1});
 
         sw.displayChart();
 
@@ -39,22 +39,22 @@ public class Plot extends Thread {
                 Interpreter.reportAboutError("interrupt ui thread");
             }
 
-            final Integer[][] dataPersentile95 = getData(queue, 0.95);
-            final Integer[][] dataPersentile90 = getData(queue, 0.90);
-            final Integer[][] dataPersentile85 = getData(queue, 0.85);
+            final Integer[][] dataPercentile95 = getData(queue, 0.95);
+            final Integer[][] dataPercentile90 = getData(queue, 0.90);
+            final Integer[][] dataPercentile85 = getData(queue, 0.85);
 
-            if (dataPersentile95[0] == null ||
-                    dataPersentile95[1] == null ||
-                    dataPersentile90[0] == null ||
-                    dataPersentile90[1] == null ||
-                    dataPersentile85[1] == null ||
-                    dataPersentile85[0] == null
+            if (dataPercentile95[0] == null ||
+                    dataPercentile95[1] == null ||
+                    dataPercentile90[0] == null ||
+                    dataPercentile90[1] == null ||
+                    dataPercentile85[1] == null ||
+                    dataPercentile85[0] == null
             ) {
                 Interpreter.reportAboutError("null in plot");
             }
-            chart.updateCategorySeries("Persentile 95", Arrays.asList(dataPersentile95[0]), Arrays.asList(dataPersentile95[1]), null);
-            chart.updateCategorySeries("Persentile 90", Arrays.asList(dataPersentile90[0]), Arrays.asList(dataPersentile90[1]), null);
-            chart.updateCategorySeries("Persentile 85", Arrays.asList(dataPersentile85[0]), Arrays.asList(dataPersentile85[1]), null);
+            chart.updateCategorySeries("Percentile 95", Arrays.asList(dataPercentile95[0]), Arrays.asList(dataPercentile95[1]), null);
+            chart.updateCategorySeries("Percentile 90", Arrays.asList(dataPercentile90[0]), Arrays.asList(dataPercentile90[1]), null);
+            chart.updateCategorySeries("Percentile 85", Arrays.asList(dataPercentile85[0]), Arrays.asList(dataPercentile85[1]), null);
             sw.repaintChart();
         }
     }
@@ -72,7 +72,7 @@ public class Plot extends Thread {
          */
     private static Integer[][] getData(Queue<Long> queue, double percentile) {
         Object[] rowData = queue.toArray();
-        int[] data = convertToDouble(rowData);
+        int[] data = convertToInt(rowData);
 
         Arrays.sort(data);
         int startIndex = data.length > 1 ? Math.min(data.length - 1, (int)(data.length*percentile)) : 0;
@@ -112,7 +112,7 @@ public class Plot extends Thread {
      * @param data
      * @return
      */
-    private static int[] convertToDouble(Object[] data) {
+    private static int[] convertToInt(Object[] data) {
         int[] convertedData = new int[data.length];
         for (int i = 0; i < data.length; i++) {
             convertedData[i] = ((Long)data[i]).intValue();

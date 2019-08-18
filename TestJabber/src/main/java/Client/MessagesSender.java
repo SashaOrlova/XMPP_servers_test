@@ -9,6 +9,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -115,6 +116,13 @@ public class MessagesSender extends Thread {
                 sleep(100000);
             } catch (InterruptedException e) {
                log.log(Level.SEVERE, "Interruptes while sleeping", e);
+            }
+
+            for (Chat chat: chats) {
+                Collection<MessageListener> listeners =  chat.getListeners();
+                for (MessageListener listener: listeners) {
+                    chat.removeMessageListener(listener);
+                }
             }
             log.info("Finish all" + id);
         } catch (Exception e) {
