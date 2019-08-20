@@ -4,9 +4,8 @@ import Local.Comunicator.ClientCommunicator;
 import Local.Configuration.ConfigParser;
 import Local.Configuration.MainConfig;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -24,7 +23,7 @@ public class Interpreter {
     private static final String EXIT = "exit";
     private static final String MODE_ONLINE = "mode online";
     private static final String MODE_OFFLINE = "mode offline";
-
+    private static final String PLOT_FROM_FILE = "plot from file";
 
     public static void main(String[] args) throws Exception {
         MainConfig config = null;
@@ -72,12 +71,19 @@ public class Interpreter {
                 case EXIT:
                     System.exit(0);
                     break;
+
                 case MODE_OFFLINE:
                     mode = Mode.OFFLINE;
                     break;
 
                 case MODE_ONLINE:
                     mode = Mode.ONLINE;
+                    break;
+
+                case PLOT_FROM_FILE:
+                    Queue<Long> queue = getDataFromFile();
+
+                    Plot.drawConstantPlot(queue);
                     break;
 
                 default:
@@ -142,5 +148,21 @@ public class Interpreter {
         }
 
         writer.close();
+    }
+
+    /**
+     * Read data from file saved by offline mode
+     * @return
+     * @throws FileNotFoundException
+     */
+    private static Queue<Long> getDataFromFile() throws FileNotFoundException {
+        Queue<Long> globalQueue = new ArrayDeque<>();
+        Scanner scanner = new Scanner(new File(FILE_NAME));
+
+        while (scanner.hasNext()) {
+            globalQueue.add(scanner.nextLong());
+        }
+
+        return globalQueue;
     }
 }

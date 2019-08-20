@@ -39,37 +39,67 @@ public class Plot extends Thread {
                 Interpreter.reportAboutError("interrupt ui thread");
             }
 
-            final Integer[][] dataPercentile95 = getData(queue, 0.95);
-            final Integer[][] dataPercentile90 = getData(queue, 0.90);
-            final Integer[][] dataPercentile85 = getData(queue, 0.85);
-
-            if (dataPercentile95[0] == null ||
-                    dataPercentile95[1] == null ||
-                    dataPercentile90[0] == null ||
-                    dataPercentile90[1] == null ||
-                    dataPercentile85[1] == null ||
-                    dataPercentile85[0] == null
-            ) {
-                Interpreter.reportAboutError("null in plot");
-            }
-            chart.updateCategorySeries("Percentile 95", Arrays.asList(dataPercentile95[0]), Arrays.asList(dataPercentile95[1]), null);
-            chart.updateCategorySeries("Percentile 90", Arrays.asList(dataPercentile90[0]), Arrays.asList(dataPercentile90[1]), null);
-            chart.updateCategorySeries("Percentile 85", Arrays.asList(dataPercentile85[0]), Arrays.asList(dataPercentile85[1]), null);
+            drawPlot(queue, chart);
             sw.repaintChart();
         }
     }
 
-    public static void main(String[] args) {
-        Plot plot = new Plot(null, null);
-        plot.start();
+    /**
+     * update existed plot
+     * @param queue
+     * @param chart
+     */
+    public static void drawPlot(Queue<Long> queue, CategoryChart chart) {
+        final Integer[][] dataPercentile95 = getData(queue, 0.95);
+        final Integer[][] dataPercentile90 = getData(queue, 0.90);
+        final Integer[][] dataPercentile85 = getData(queue, 0.85);
+
+        if (dataPercentile95[0] == null ||
+                dataPercentile95[1] == null ||
+                dataPercentile90[0] == null ||
+                dataPercentile90[1] == null ||
+                dataPercentile85[1] == null ||
+                dataPercentile85[0] == null
+        ) {
+            Interpreter.reportAboutError("null in plot");
+        }
+        chart.updateCategorySeries("Percentile 95", Arrays.asList(dataPercentile95[0]), Arrays.asList(dataPercentile95[1]), null);
+        chart.updateCategorySeries("Percentile 90", Arrays.asList(dataPercentile90[0]), Arrays.asList(dataPercentile90[1]), null);
+        chart.updateCategorySeries("Percentile 85", Arrays.asList(dataPercentile85[0]), Arrays.asList(dataPercentile85[1]), null);
     }
 
-        /**
-         * get data from global queue
-         * only data for drawing
-         * @param queue
-         * @return
-         */
+    /**
+     * draw constant plot from data
+     * @param queue
+     */
+    public static void drawConstantPlot(Queue<Long> queue) {
+        final CategoryChart chart = new CategoryChartBuilder()
+                .width(800)
+                .height(600)
+                .title("Score Histogram")
+                .xAxisTitle("Score")
+                .yAxisTitle("Number")
+                .build();
+
+        final SwingWrapper<CategoryChart> sw = new SwingWrapper<>(chart);
+
+        final Integer[][] dataPercentile95 = getData(queue, 0.95);
+        final Integer[][] dataPercentile90 = getData(queue, 0.90);
+        final Integer[][] dataPercentile85 = getData(queue, 0.85);
+
+        chart.addSeries("Percentile 95", Arrays.asList(dataPercentile95[0]), Arrays.asList(dataPercentile95[1]));
+        chart.addSeries("Percentile 90", Arrays.asList(dataPercentile90[0]), Arrays.asList(dataPercentile90[1]));
+        chart.addSeries("Percentile 85", Arrays.asList(dataPercentile85[0]), Arrays.asList(dataPercentile85[1]));
+
+        sw.displayChart();
+    }
+
+    /**
+     * get data from global queue
+     * only data for drawing
+     * @param queue
+     * @return
+     */
     private static Integer[][] getData(Queue<Long> queue, double percentile) {
         Object[] rowData = queue.toArray();
         int[] data = convertToInt(rowData);
@@ -78,7 +108,7 @@ public class Plot extends Thread {
         int startIndex = data.length > 1 ? Math.min(data.length - 1, (int)(data.length*percentile)) : 0;
 
         int[] percentilesData = Arrays.copyOfRange(data, startIndex, data.length);
-        int coeff = 500;
+        int coeff = (int) (1 - percentile) * 10000;
         for (int i = 0; i < percentilesData.length; i++) {
             percentilesData[i] = (int)Math.ceil((double)percentilesData[i]/coeff)*coeff;
         }
