@@ -37,6 +37,18 @@ public class MainConfig {
      * after how many time we need result
      */
     private int maxWaitTime;
+    /**
+     * size of step on login test
+     */
+    private int stepSize = 100;
+    /**
+     * number of steps on login test
+     */
+    private int iterationsNumber = 10;
+    /**
+     * initial number of clients
+     */
+    private int startClientsNumber = 400;
 
     public MainConfig(int instanceCount,
                       int sendingMessagesCount,
@@ -93,5 +105,21 @@ public class MainConfig {
 
     public int getUpdateTime() {
         return updateTime;
+    }
+
+    public int getStepSize() {
+        return stepSize;
+    }
+
+    public int getIterationsNumber() {
+        return iterationsNumber;
+    }
+
+    public int getStartClientsNumber() {
+        return startClientsNumber;
+    }
+
+    public int getIterationClients(int iteration) {
+        return startClientsNumber + iteration * stepSize;
     }
 }

@@ -2,14 +2,16 @@ package Client;
 
 import Client.Configuration.ClientConfig;
 import Common.Results;
-import org.jivesoftware.smack.*;
-import org.jivesoftware.smack.packet.Message;
+import rocks.xmpp.addr.Jid;
+import rocks.xmpp.core.XmppException;
+import rocks.xmpp.core.net.ChannelEncryption;
+import rocks.xmpp.core.net.client.SocketConnectionConfiguration;
+import rocks.xmpp.core.session.XmppClient;
+import rocks.xmpp.core.stanza.model.Message;
 
-import java.io.DataOutputStream;
+
 import java.io.IOException;
-import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Queue;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,16 +21,12 @@ public class MessagesSender extends Thread {
 
     private int id;
     private Random rand = new Random();
-    private DataOutputStream out;
+    private Queue<Integer> answers;
     private ClientConfig config;
 
-    MessagesSender(int id, Socket socket, ClientConfig config) {
+    MessagesSender(int id, Queue<Integer> answers, ClientConfig config) {
         this.id = id;
-        try {
-            this.out = new DataOutputStream(socket.getOutputStream());
-        } catch (IOException e) {
-            log.log(Level.SEVERE, "Can't create stream", e);
-        }
+        this.answers = answers;
         this.config = config;
     }
 
@@ -37,23 +35,25 @@ public class MessagesSender extends Thread {
      *
      * @return XMPPConnection
      */
-    private XMPPConnection getConnection() {
-        ConnectionConfiguration config = new ConnectionConfiguration(this.config.getHost(), 5222, this.config.getServiceName());
-        SASLAuthentication.supportSASLMechanism("PLAIN", 0);
+    private SocketConnectionConfiguration getConnection() {
+        SocketConnectionConfiguration config;
+        config = SocketConnectionConfiguration.builder()
+                .hostname(this.config.getHost())
+                .channelEncryption(ChannelEncryption.DISABLED)
+                .port(5222)
+                .build();
         log.info("Connect to server");
-        return new XMPPConnection(config);
+        return config;
     }
 
     /**
      * Login user on xmpp server
      * NOTICE: expensive operation for server
      *
-     * @param connection
-     * @throws XMPPException
+     * @param xmppClient
      */
-    private void login(XMPPConnection connection) throws XMPPException {
-        connection.connect();
-        connection.login("testuser" + id, "pass123");
+    private void login(XmppClient xmppClient) throws XmppException {
+        xmppClient.login("testuser" + id, "pass123");
         log.info("Login in: " + "testuser" + id);
     }
 
@@ -63,11 +63,11 @@ public class MessagesSender extends Thread {
      * @param message
      * @throws IOException
      */
-    private void sendToLocal(Message message) throws IOException {
+    private void sendToLocal(Message message) {
         long timestamp = System.currentTimeMillis();
-        long duration = timestamp - Long.parseLong(message.getBody(), 10);
-        out.writeInt(Results.SUCCESS);
-        out.writeLong(duration);
+        int duration = (int) (timestamp - Long.parseLong(message.getBody(), 10));
+        answers.add(duration);
+        System.out.println(duration);
         log.info("Send timestamp from user" + id + ' ' + timestamp);
     }
 
@@ -75,40 +75,29 @@ public class MessagesSender extends Thread {
      * send message to server
      * message contain current timestamp
      *
-     * @param chat
-     * @throws XMPPException
+     * @param xmppClient
      */
-    private void sendMessageToChat(Chat chat) throws XMPPException {
+    private void sendMessageToChat(XmppClient xmppClient, String userJid) {
         long timestamp = System.currentTimeMillis();
-        chat.sendMessage(Long.toString(timestamp));
+        xmppClient.send(new Message(Jid.of(userJid), Message.Type.CHAT, Long.toString(timestamp)));
     }
 
     @Override
     public void run() {
-        XMPPConnection connection = getConnection();
+        XmppClient xmppClient = XmppClient.create(this.config.getServiceName(), getConnection());
+        xmppClient.addInboundMessageListener(e -> {
+            Message message = e.getMessage();
+            sendToLocal(message);
+        });
         try {
-            login(connection);
-            ArrayList<Chat> chats = new ArrayList<>();
-            for (int j = 0; j < 1; j++) {
-                int number = rand.nextInt(config.getClientsNumber()) + 1;
-                Chat chat = connection.getChatManager().createChat("testuser" + number + "@localhost", new MessageListener() {
-                    public void processMessage(Chat chat, Message message) {
-                        try {
-                            sendToLocal(message);
-                        } catch (IOException e) {
-                            log.log(Level.WARNING, "Error in sending result", e);
-                        }
-                    }
-                });
-                chats.add(chat);
-                log.info("Add chart between " + id + " and " + number);
-            }
+            xmppClient.connect();
+            login(xmppClient);
 
             for (int k = 0; k < config.getMessageNumber(); k++) {
-                int l = rand.nextInt(chats.size());
-                log.info("Send to " + chats.get(l) + " by " + id);
-                Chat chat = chats.get(l);
-                sendMessageToChat(chat);
+                int number = rand.nextInt(config.getClientsNumber()) + 1;
+                int l = rand.nextInt(number);
+                log.info("Send to " + l + " by " + id);
+                sendMessageToChat(xmppClient, "testuser" + k + "@" + config.getServiceName());
                 if (config.getSendingDelay() != 0) {
                     Thread.sleep(config.getSendingDelay());
                 }
@@ -117,24 +106,13 @@ public class MessagesSender extends Thread {
             log.info("Finish messaging " + id);
 
             try {
-                sleep(100000);
+                sleep(config.getMaxSleepTime());
             } catch (InterruptedException e) {
                 log.log(Level.SEVERE, "Interruptes while sleeping", e);
             }
 
-            for (Chat chat : chats) {
-                Collection<MessageListener> listeners = chat.getListeners();
-                for (MessageListener listener : listeners) {
-                    chat.removeMessageListener(listener);
-                }
-            }
             log.info("Finish all" + id);
         } catch (Exception e) {
-            try {
-                out.writeInt(Results.FAIL);
-            } catch (IOException e1) {
-                log.info("Cant report about error");
-            }
             log.log(Level.SEVERE, "Error while messaging", e);
         }
     }

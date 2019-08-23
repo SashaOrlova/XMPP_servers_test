@@ -24,11 +24,12 @@ public class ClientCommunicator {
     public void startCommunication(MainConfig config) throws IOException {
         this.config = config;
         for (InstanceConfig instance : config.getInstances()) {
-            Client client = null;
+            Client client;
             try {
                 client = new Client(instance.getHost(), instance.getPort());
             } catch (IOException e) {
                 Interpreter.reportAboutError("client connect fail " + e.getMessage());
+                continue;
             }
             clients.add(client);
             client.start();
@@ -57,6 +58,25 @@ public class ClientCommunicator {
         }
     }
 
+    public void sendLoginConfig(int iteration) throws IOException {
+        int clientsCounter = 0;
+        int stepSize = (config.getIterationClients(iteration)) / config.getInstanceCount();
+        for (Client client : clients) {
+            ClientConfig config = new ClientConfig(this.config.getServiceIP(),
+                    this.config.getServiceName(),
+                    this.config.getSendingDelay(),
+                    this.config.getUpdateTime(),
+                    clientsCounter,
+                    clientsCounter + stepSize,
+                    this.config.getUsersCount(),
+                    this.config.getSendingMessagesCount(),
+                    this.config.getMaxWaitTime()
+            );
+            clientsCounter += stepSize;
+            client.sendConfig(config);
+        }
+    }
+
     /**
      * launch tests in all clients
      */
@@ -64,16 +84,38 @@ public class ClientCommunicator {
         final AtomicInteger atomicInt = new AtomicInteger(0);
 
         for (final Client client : clients) {
-            Thread myThready = new Thread(new Runnable() {
+            Thread clientsThread = new Thread(() -> {
+                try {
+                    client.startTest(globalQueue, atomicInt);
+                } catch (IOException e) {
+                    Interpreter.reportAboutError("client connection error");
+                }
+            });
+            clientsThread.start();
+        }
+    }
+
+    /**
+     * launch login tests in all clients
+     */
+    public void startLoginTesting(final AtomicInteger successAnswers, final AtomicInteger failsAnswers) throws InterruptedException {
+        ArrayList<Thread> threads = new ArrayList<>();
+
+        for (final Client client : clients) {
+            Thread clientsThread = new Thread(new Runnable() {
                 public void run() {
                     try {
-                        client.startTest(globalQueue, atomicInt);
+                        client.startLoginTest(successAnswers, failsAnswers);
                     } catch (IOException e) {
                         Interpreter.reportAboutError("client connection error");
                     }
                 }
             });
-            myThready.start();
+            clientsThread.start();
+            threads.add(clientsThread);
+        }
+        for (Thread thread: threads) {
+            thread.join();
         }
     }
 }

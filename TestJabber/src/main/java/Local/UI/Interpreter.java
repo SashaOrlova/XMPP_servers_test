@@ -11,11 +11,12 @@ public class Interpreter {
     private static final String START = "start";
     private static final String LOAD_CONFIG = "load config";
     private static final String PARSE_CONFIG = "parse config";
-    private static final String START_TEST = "start test";
+    private static final String START_TEST = "start message test";
     private static final String EXIT = "exit";
     private static final String MODE_ONLINE = "mode online";
     private static final String MODE_OFFLINE = "mode offline";
     private static final String PLOT_FROM_FILE = "plot from file";
+    private static final String START_LOGIN_TEST = "start login test";
 
     public static void main(String[] args) throws Exception {
         Controller controller = new Controller();
@@ -57,6 +58,10 @@ public class Interpreter {
 
                     case PLOT_FROM_FILE:
                         controller.plotFromFile();
+                        break;
+
+                    case START_LOGIN_TEST:
+                        controller.startLoginTest();
                         break;
 
                     default:

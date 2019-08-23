@@ -63,18 +63,56 @@ public class Client {
         DataInputStream dataInputStream = new DataInputStream(stream);
         socket.getOutputStream().write(Commands.START_TESTING);
         while (!socket.isClosed()) {
+            long timestamp = dataInputStream.readLong();
+            log.info("Get answer from client: " + timestamp);
+//            switch (result) {
+//                case Results.SUCCESS:
+//                    long timestamp = dataInputStream.readLong();
+//                    log.info("Get time from client: " + timestamp);
+                    successAnswers.add(timestamp);
+//                    break;
+//                case Results.FAIL:
+//                    log.info("Get fail from client");
+//                    failsAnswers.incrementAndGet();
+//                    break;
+//                case Commands.FINISH:
+//                    log.info("finish message");
+//                    dataInputStream.close();
+//                    socket.close();
+//                    return;
+//            }
+        }
+    }
+
+    /**
+     * Start login test
+     *
+     * @param successAnswers
+     * @param failsAnswers
+     * @throws IOException
+     */
+    public void startLoginTest(AtomicInteger successAnswers, AtomicInteger failsAnswers) throws IOException {
+        log.info("Start login test");
+        InputStream stream = socket.getInputStream();
+        DataInputStream dataInputStream = new DataInputStream(stream);
+        socket.getOutputStream().write(Commands.START_LOGIN);
+        while (!socket.isClosed()) {
             int result = dataInputStream.readInt();
             log.info("Get answer from client: " + result);
             switch (result) {
                 case Results.SUCCESS:
-                    long timestamp = dataInputStream.readLong();
-                    log.info("Get time from client: " + timestamp);
-                    successAnswers.add(timestamp);
+                    log.info("Get success from client");
+                    successAnswers.incrementAndGet();
                     break;
                 case Results.FAIL:
                     log.info("Get fail from client");
                     failsAnswers.incrementAndGet();
                     break;
+                case Commands.FINISH:
+                    log.info("finish message");
+                    dataInputStream.close();
+                    socket.close();
+                    return;
             }
         }
     }
