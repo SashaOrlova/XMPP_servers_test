@@ -1,12 +1,12 @@
 package Client;
 
 import Client.Configuration.ClientConfig;
-import Common.Results;
 import rocks.xmpp.addr.Jid;
 import rocks.xmpp.core.XmppException;
 import rocks.xmpp.core.net.ChannelEncryption;
 import rocks.xmpp.core.net.client.SocketConnectionConfiguration;
 import rocks.xmpp.core.session.XmppClient;
+import rocks.xmpp.core.stanza.MessageEvent;
 import rocks.xmpp.core.stanza.model.Message;
 
 
@@ -78,8 +78,7 @@ public class MessagesSender extends Thread {
      * @param xmppClient
      */
     private void sendMessageToChat(XmppClient xmppClient, String userJid) {
-        long timestamp = System.currentTimeMillis();
-        xmppClient.send(new Message(Jid.of(userJid), Message.Type.CHAT, Long.toString(timestamp)));
+        xmppClient.sendMessageNoWait(new Message(Jid.of(userJid), Message.Type.CHAT, Long.toString(System.currentTimeMillis())));
     }
 
     @Override
@@ -89,6 +88,9 @@ public class MessagesSender extends Thread {
             Message message = e.getMessage();
             sendToLocal(message);
         });
+        xmppClient.addOutboundMessageListener((MessageEvent e)->{
+            e.getMessage().setBody(Long.toString(System.currentTimeMillis()));
+            System.out.println(Long.getLong(e.getMessage().getBody()) - System.currentTimeMillis()); });
         try {
             xmppClient.connect();
             login(xmppClient);
@@ -108,7 +110,8 @@ public class MessagesSender extends Thread {
             try {
                 sleep(config.getMaxSleepTime());
             } catch (InterruptedException e) {
-                log.log(Level.SEVERE, "Interruptes while sleeping", e);
+                log.log(Level.INFO, "Interruptes while sleeping", e);
+                return;
             }
 
             log.info("Finish all" + id);

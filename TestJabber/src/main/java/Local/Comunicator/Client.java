@@ -63,24 +63,15 @@ public class Client {
         DataInputStream dataInputStream = new DataInputStream(stream);
         socket.getOutputStream().write(Commands.START_TESTING);
         while (!socket.isClosed()) {
-            long timestamp = dataInputStream.readLong();
-            log.info("Get answer from client: " + timestamp);
-//            switch (result) {
-//                case Results.SUCCESS:
-//                    long timestamp = dataInputStream.readLong();
-//                    log.info("Get time from client: " + timestamp);
-                    successAnswers.add(timestamp);
-//                    break;
-//                case Results.FAIL:
-//                    log.info("Get fail from client");
-//                    failsAnswers.incrementAndGet();
-//                    break;
-//                case Commands.FINISH:
-//                    log.info("finish message");
-//                    dataInputStream.close();
-//                    socket.close();
-//                    return;
-//            }
+            long result = dataInputStream.readInt();
+            log.info("Get answer from client: " + result);
+            if (result == Commands.FINISH) {
+                dataInputStream.close();
+                socket.close();
+                return;
+            }
+
+            successAnswers.add(result);
         }
     }
 

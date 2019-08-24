@@ -82,37 +82,12 @@ public class Client {
                     DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
 
                     ClientConfig finalConfig = config;
-                    Thread uploadThread = new Thread(() -> {
-                        while (true) {
-                            Object[] array = answers.toArray();
-                            answers.clear();
-                            for (Object answer: array) {
-                                try {
-                                    out.writeInt((Integer) answer);
-                                } catch (IOException e) {
-                                    log.severe("Client socket error");
-                                }
-                            }
-                            try {
-                                Thread.sleep(finalConfig.getUpdateTime());
-                            } catch (InterruptedException e) {
-                                return;
-                            }
-                        }
-                    });
+                    Thread uploadThread = new Thread(() -> updateInfo(out, finalConfig, answers));
                     uploadThread.run();
-
-                    for (Thread thread: threads) {
-                        try {
-                            thread.join();
-                        } catch (InterruptedException e) {
-                            log.severe("interrupt during wait threads");
-                            clientSocket.close();
-                            return;
-                        }
-                    }
-                    uploadThread.interrupt();
                     uploadThread.join();
+                    for (Thread thread: threads) {
+                        thread.interrupt();
+                    }
                     log.info("Finish test");
                     clientSocket.close();
                     break;
@@ -153,6 +128,40 @@ public class Client {
 
                 default:
                     log.warning("Unknown command");
+            }
+        }
+    }
+
+    private static void updateInfo(DataOutputStream out, ClientConfig config, Queue<Integer> answers) {
+        int zeroSize = 0;
+        while (true) {
+            try {
+                Thread.sleep(config.getUpdateTime());
+            } catch (InterruptedException e) {
+                return;
+            }
+            Object[] array = answers.toArray();
+            if (answers.size() == 0) {
+                zeroSize++;
+                if (zeroSize >= 5) {
+                    try {
+                        out.writeInt(-1);
+                        out.close();
+                        return;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else {
+                zeroSize = 0;
+            }
+            answers.clear();
+            for (Object answer: array) {
+                try {
+                    out.writeInt((Integer) answer);
+                } catch (IOException e) {
+                    log.severe("Client socket error");
+                }
             }
         }
     }

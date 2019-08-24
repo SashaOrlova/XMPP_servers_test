@@ -10,10 +10,10 @@ public class QuantilesPlot extends Thread {
     private MainConfig config;
     private Queue<Long> queue;
     long startTime = System.currentTimeMillis();
-    private ArrayList<Long> testTime = new ArrayList<>();
-    private ArrayList<Integer> answerTime95 = new ArrayList<>();
-    private ArrayList<Integer> answerTime99 = new ArrayList<>();
-    private ArrayList<Integer> answerTime90 = new ArrayList<>();
+    private List<Long> testTime = new ArrayList<>();
+    private List<Integer> answerTime95 = new ArrayList<>();
+    private List<Integer> answerTime99 = new ArrayList<>();
+    private List<Integer> answerTime90 = new ArrayList<>();
 
 
 
@@ -101,6 +101,13 @@ public class QuantilesPlot extends Thread {
             answerTime95.add(0);
             answerTime99.add(0);
             answerTime90.add(0);
+        }
+
+        if (testTime.size() > 60) {
+            testTime = testTime.subList(testTime.size() - 60, testTime.size());
+            answerTime90 = answerTime90.subList(answerTime90.size() - 60, answerTime90.size());
+            answerTime95 = answerTime95.subList(answerTime95.size() - 60, answerTime95.size());
+            answerTime99 = answerTime99.subList(answerTime99.size() - 60, answerTime99.size());
         }
     }
 
