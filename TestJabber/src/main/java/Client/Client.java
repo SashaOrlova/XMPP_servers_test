@@ -17,6 +17,9 @@ import java.util.logging.Logger;
 
 public class Client {
     private static Logger log = Logger.getLogger(Client.class.getName());
+    private ClientConfig config = null;
+    private Socket clientSocket = null;
+    private Queue<Integer> answers = new ConcurrentLinkedQueue<>();
 
     public static void main(String[] args) {
         try {
@@ -33,103 +36,114 @@ public class Client {
 
     Client(Socket clientSocket) throws IOException, InterruptedException {
         InputStream inputStream = clientSocket.getInputStream();
-        ClientConfig config = null;
-        Queue<Integer> answers = new ConcurrentLinkedQueue<>();
 
         while (!clientSocket.isClosed()) {
 
             int command = inputStream.read();
             if (command == -1) {
-                continue;
+                return;
             }
+
             log.info("Get command: " + command);
             switch (command) {
                 case Commands.START_CLIENT:
-                    log.info("Start client");
+                    startClient();
                     break;
 
                 case Commands.SEND_CONFIG:
-                    log.info("Read config");
-                    ObjectInputStream ois = new ObjectInputStream(inputStream);
-                    try {
-                        config = (ClientConfig) ois.readObject();
-                        if (config == null) {
-                            log.info("No config found");
-                            clientSocket.close();
-                        }
-                    } catch (ClassNotFoundException e) {
-                        log.info("Wrong config type");
-                        clientSocket.close();
-                    }
+                    getConfig(inputStream);
                     break;
 
-                case Commands.START_TESTING:
-                    log.info("Start tests");
-                    if (config == null) {
-                        log.severe("No config");
-                        clientSocket.close();
-                        return;
-                    }
-
-                    ArrayList<Thread> threads = new ArrayList<>();
-                    for (int i = config.getUserStartIndex(); i < config.getUserFinishIndex(); i++) {
-                        log.info("start user " + i);
-                        Thread sender = new MessagesSender(i, answers, config);
-                        threads.add(sender);
-                        sender.start();
-                    }
-
-                    DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
-
-                    ClientConfig finalConfig = config;
-                    Thread uploadThread = new Thread(() -> updateInfo(out, finalConfig, answers));
-                    uploadThread.run();
-                    uploadThread.join();
-                    for (Thread thread: threads) {
-                        thread.interrupt();
-                    }
-                    log.info("Finish test");
-                    clientSocket.close();
+                case Commands.START_MESSAGE:
+                    messageTest();
                     break;
 
                 case Commands.START_LOGIN:
-                    log.info("Start login tests");
-                    if (config == null) {
-                        log.severe("No config");
-                        clientSocket.close();
-                        return;
-                    }
-                    ArrayList<Thread> loginThreads = new ArrayList<>();
-                    for (int i = config.getUserStartIndex(); i < config.getUserFinishIndex(); i++) {
-                        log.info("start user " + i);
-                        Thread sender = new LoginChecker(i, answers, config);
-                        loginThreads.add(sender);
-                        sender.start();
-                    }
-                    for (Thread thread: loginThreads) {
-                        try {
-                            thread.join();
-                        } catch (InterruptedException e) {
-                            log.severe("interrupt during wait threads");
-                            clientSocket.close();
-                            return;
-                        }
-                    }
-                    log.info("Finish test");
-                    out = new DataOutputStream(clientSocket.getOutputStream());
-
-                    for (Integer answer: answers) {
-                        out.writeInt(answer);
-                    }
-                    out.writeInt(Commands.FINISH);
-                    out.close();
-                    clientSocket.close();
+                    loginTest();
                     break;
 
                 default:
                     log.warning("Unknown command");
+                    break;
             }
         }
+    }
+
+    private void getConfig(InputStream inputStream) throws IOException {
+        log.info("Read config");
+        ObjectInputStream ois = new ObjectInputStream(inputStream);
+        try {
+            config = (ClientConfig) ois.readObject();
+            if (config == null) {
+                log.info("No config found");
+                clientSocket.close();
+            }
+        } catch (ClassNotFoundException e) {
+            log.info("Wrong config type");
+            clientSocket.close();
+        }
+    }
+
+    private void startClient() {
+        log.info("Start client");
+    }
+
+    private void messageTest() throws IOException, InterruptedException {
+        log.info("Start tests");
+        if (config == null) {
+            log.severe("No config");
+            clientSocket.close();
+            return;
+        }
+
+        ArrayList<Thread> threads = new ArrayList<>();
+        for (int i = config.getUserStartIndex(); i < config.getUserFinishIndex(); i++) {
+            log.info("start user " + i);
+            Thread sender = new MessagesSender(i, answers, config);
+            threads.add(sender);
+            sender.start();
+        }
+
+        DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
+
+        ClientConfig finalConfig = config;
+        Thread uploadThread = new Thread(() -> updateInfo(out, finalConfig, answers));
+        uploadThread.run();
+        uploadThread.join();
+        for (Thread thread: threads) {
+            thread.interrupt();
+        }
+        log.info("Finish test");
+        clientSocket.close();
+    }
+
+    private void loginTest() throws IOException, InterruptedException {
+        log.info("Start tests");
+        if (config == null) {
+            log.severe("No config");
+            clientSocket.close();
+            return;
+        }
+
+        ArrayList<Thread> threads = new ArrayList<>();
+        for (int i = config.getUserStartIndex(); i < config.getUserFinishIndex(); i++) {
+            log.info("start user " + i);
+            Thread sender = new LoginChecker(i, answers, config);
+            threads.add(sender);
+            sender.start();
+        }
+
+        DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
+
+        ClientConfig finalConfig = config;
+        Thread uploadThread = new Thread(() -> updateInfo(out, finalConfig, answers));
+        uploadThread.run();
+        uploadThread.join();
+        for (Thread thread: threads) {
+            thread.interrupt();
+        }
+        log.info("Finish test");
+        clientSocket.close();
     }
 
     private static void updateInfo(DataOutputStream out, ClientConfig config, Queue<Integer> answers) {

@@ -61,7 +61,7 @@ public class Client {
         log.info("Start test");
         InputStream stream = socket.getInputStream();
         DataInputStream dataInputStream = new DataInputStream(stream);
-        socket.getOutputStream().write(Commands.START_TESTING);
+        socket.getOutputStream().write(Commands.START_MESSAGE);
         while (!socket.isClosed()) {
             long result = dataInputStream.readInt();
             log.info("Get answer from client: " + result);
