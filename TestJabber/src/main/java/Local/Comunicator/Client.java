@@ -54,10 +54,9 @@ public class Client {
      * Append result of tests in global queue
      *
      * @param successAnswers
-     * @param failsAnswers
      * @throws IOException
      */
-    public void startTest(Queue<Long> successAnswers, AtomicInteger failsAnswers) throws IOException {
+    public void startTest(Queue<Long> successAnswers) throws IOException {
         log.info("Start test");
         InputStream stream = socket.getInputStream();
         DataInputStream dataInputStream = new DataInputStream(stream);
@@ -79,32 +78,23 @@ public class Client {
      * Start login test
      *
      * @param successAnswers
-     * @param failsAnswers
      * @throws IOException
      */
-    public void startLoginTest(AtomicInteger successAnswers, AtomicInteger failsAnswers) throws IOException {
+    public void startLoginTest(Queue<Long> successAnswers) throws IOException {
         log.info("Start login test");
         InputStream stream = socket.getInputStream();
         DataInputStream dataInputStream = new DataInputStream(stream);
         socket.getOutputStream().write(Commands.START_LOGIN);
         while (!socket.isClosed()) {
-            int result = dataInputStream.readInt();
+            long result = dataInputStream.readInt();
             log.info("Get answer from client: " + result);
-            switch (result) {
-                case Results.SUCCESS:
-                    log.info("Get success from client");
-                    successAnswers.incrementAndGet();
-                    break;
-                case Results.FAIL:
-                    log.info("Get fail from client");
-                    failsAnswers.incrementAndGet();
-                    break;
-                case Commands.FINISH:
-                    log.info("finish message");
-                    dataInputStream.close();
-                    socket.close();
-                    return;
+            if (result == Commands.FINISH) {
+                dataInputStream.close();
+                socket.close();
+                return;
             }
+
+            successAnswers.add(result);
         }
     }
 }
