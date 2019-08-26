@@ -108,4 +108,20 @@ public class ClientCommunicator {
             clientsThread.start();
         }
     }
+
+    /**
+     * launch register tests in all clients
+     */
+    public void startRegisterTesting(final Queue<Long> globalQueue) throws InterruptedException {
+        for (final Client client : clients) {
+            Thread clientsThread = new Thread(() -> {
+                try {
+                    client.startRegisterTest(globalQueue);
+                } catch (IOException e) {
+                    Interpreter.reportAboutError("client connection error");
+                }
+            });
+            clientsThread.start();
+        }
+    }
 }

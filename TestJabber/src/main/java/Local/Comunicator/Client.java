@@ -69,7 +69,6 @@ public class Client {
                 socket.close();
                 return;
             }
-
             successAnswers.add(result);
         }
     }
@@ -85,6 +84,30 @@ public class Client {
         InputStream stream = socket.getInputStream();
         DataInputStream dataInputStream = new DataInputStream(stream);
         socket.getOutputStream().write(Commands.START_LOGIN);
+        while (!socket.isClosed()) {
+            long result = dataInputStream.readInt();
+            log.info("Get answer from client: " + result);
+            if (result == Commands.FINISH) {
+                dataInputStream.close();
+                socket.close();
+                return;
+            }
+
+            successAnswers.add(result);
+        }
+    }
+
+    /**
+     * Start login test
+     *
+     * @param successAnswers
+     * @throws IOException
+     */
+    public void startRegisterTest(Queue<Long> successAnswers) throws IOException {
+        log.info("Start register test");
+        InputStream stream = socket.getInputStream();
+        DataInputStream dataInputStream = new DataInputStream(stream);
+        socket.getOutputStream().write(Commands.REGISTER_USER);
         while (!socket.isClosed()) {
             long result = dataInputStream.readInt();
             log.info("Get answer from client: " + result);

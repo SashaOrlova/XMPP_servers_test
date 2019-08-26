@@ -1,25 +1,19 @@
 package Client;
 
 import Client.Configuration.ClientConfig;
-import Common.Results;
 import org.jivesoftware.smack.*;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.net.Socket;
 import java.util.Queue;
-import java.util.Random;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class LoginChecker extends Thread {
+public class RegisterationChecker extends Thread {
     private static Logger log = Logger.getLogger(LoginChecker.class.getName());
 
     private int id;
     private Queue<Integer> queue;
     private ClientConfig config;
 
-    LoginChecker(int id, Queue<Integer> queue, ClientConfig config) {
+    RegisterationChecker(int id, Queue<Integer> queue, ClientConfig config) {
         this.id = id;
         this.queue = queue;
         this.config = config;
@@ -38,28 +32,33 @@ public class LoginChecker extends Thread {
     }
 
     /**
-     * Login user on xmpp server
-     * NOTICE: expensive operation for server
+     * Check is xmpp server allow register users
      *
-     * @param connection
-     * @throws XMPPException
+     * @return
      */
-    private void login(XMPPConnection connection) throws XMPPException {
-        connection.connect();
-        connection.login("testuser" + id, "pass123");
-        log.info("Login in: " + "testuser" + id);
+    private boolean canRegisterUsers() {
+        XMPPConnection connection = getConnection();
+        AccountManager accountManager = new AccountManager(connection);
+        boolean canRegisterUsers = accountManager.supportsAccountCreation();
+        connection.disconnect();
+        return canRegisterUsers;
     }
 
 
     @Override
     public void run() {
+        if (!canRegisterUsers()) {
+            return;
+        }
+
         for (int i = 0; i < config.getMessageNumber(); i++) {
             try {
                 XMPPConnection connection = getConnection();
                 long startTimestamp = System.currentTimeMillis();
-                login(connection);
+                AccountManager accountManager = new AccountManager(connection);
+                accountManager.createAccount("user" + id + '_' + i, "pass123");
                 long finishTimestamp = System.currentTimeMillis();
-                log.info("Success login, send to local instance");
+                log.info("Success register, send to local instance");
                 queue.add((int) (finishTimestamp - startTimestamp));
                 connection.disconnect();
                 if (config.getSendingDelay() != 0) {

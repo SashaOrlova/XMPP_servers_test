@@ -77,7 +77,7 @@ public class Controller {
 
     public void startLoginTest() throws IOException, InterruptedException {
         Queue<Long> globalQueue = new ConcurrentLinkedQueue<>();
-        communicator.startTesting(globalQueue);
+        communicator.startLoginTesting(globalQueue);
         if (!checkConfig(config)) {
             Interpreter.reportAboutError("wrong config");
         }
@@ -89,6 +89,22 @@ public class Controller {
             saveInFile(globalQueue);
         }
     }
+
+    public void startRegisterTest() throws IOException, InterruptedException {
+        Queue<Long> globalQueue = new ConcurrentLinkedQueue<>();
+        communicator.startRegisterTesting(globalQueue);
+        if (!checkConfig(config)) {
+            Interpreter.reportAboutError("wrong config");
+        }
+        if (mode == Mode.ONLINE) {
+            Thread ui = new QuantilesPlot(config, globalQueue);
+            ui.start();
+        } else {
+            waitUntilEnd(globalQueue, config);
+            saveInFile(globalQueue);
+        }
+    }
+
 
     /**
      * exit from program
