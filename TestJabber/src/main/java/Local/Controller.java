@@ -3,17 +3,13 @@ package Local;
 import Local.Comunicator.ClientCommunicator;
 import Local.Configuration.ConfigParser;
 import Local.Configuration.MainConfig;
-import Local.UI.Interpreter;
-import Local.UI.Mode;
 import Local.UI.QuantilesPlot;
 
 import java.io.*;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Queue;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class Controller {
     private int mode = Mode.ONLINE;

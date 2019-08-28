@@ -1,6 +1,4 @@
-package Local.UI;
-
-import Local.Controller;
+package Local;
 
 import java.util.Scanner;
 import java.util.logging.Logger;

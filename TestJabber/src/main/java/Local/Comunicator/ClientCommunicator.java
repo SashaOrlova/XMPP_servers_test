@@ -3,12 +3,11 @@ package Local.Comunicator;
 import Client.Configuration.ClientConfig;
 import Local.Configuration.InstanceConfig;
 import Local.Configuration.MainConfig;
-import Local.UI.Interpreter;
+import Local.Interpreter;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Queue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Class for communication of local machine and client

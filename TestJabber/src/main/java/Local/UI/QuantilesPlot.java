@@ -1,6 +1,7 @@
 package Local.UI;
 
 import Local.Configuration.MainConfig;
+import Local.Interpreter;
 import org.knowm.xchart.*;
 import org.knowm.xchart.style.Styler;
 
