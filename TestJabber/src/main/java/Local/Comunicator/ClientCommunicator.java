@@ -8,6 +8,7 @@ import Local.Interpreter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Class for communication of local machine and client
@@ -79,11 +80,11 @@ public class ClientCommunicator {
     /**
      * launch tests in all clients
      */
-    public void startTesting(final Queue<Long> globalQueue) {
+    public void startTesting(final Queue<Long> globalQueue, AtomicInteger counter) {
         for (final Client client : clients) {
             Thread clientsThread = new Thread(() -> {
                 try {
-                    client.startTest(globalQueue);
+                    client.startTest(globalQueue, counter);
                 } catch (IOException e) {
                     Interpreter.reportAboutError("client connection error");
                 }
@@ -95,11 +96,11 @@ public class ClientCommunicator {
     /**
      * launch login tests in all clients
      */
-    public void startLoginTesting(final Queue<Long> globalQueue) throws InterruptedException {
+    public void startLoginTesting(final Queue<Long> globalQueue, AtomicInteger counter) throws InterruptedException {
         for (final Client client : clients) {
             Thread clientsThread = new Thread(() -> {
                 try {
-                    client.startLoginTest(globalQueue);
+                    client.startLoginTest(globalQueue, counter);
                 } catch (IOException e) {
                     Interpreter.reportAboutError("client connection error");
                 }
@@ -111,11 +112,11 @@ public class ClientCommunicator {
     /**
      * launch register tests in all clients
      */
-    public void startRegisterTesting(final Queue<Long> globalQueue) throws InterruptedException {
+    public void startRegisterTesting(final Queue<Long> globalQueue, AtomicInteger counter) throws InterruptedException {
         for (final Client client : clients) {
             Thread clientsThread = new Thread(() -> {
                 try {
-                    client.startRegisterTest(globalQueue);
+                    client.startRegisterTest(globalQueue, counter);
                 } catch (IOException e) {
                     Interpreter.reportAboutError("client connection error");
                 }

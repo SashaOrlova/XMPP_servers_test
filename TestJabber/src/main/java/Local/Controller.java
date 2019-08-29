@@ -1,21 +1,29 @@
 package Local;
 
 import Local.Comunicator.ClientCommunicator;
+import Local.Comunicator.Monitoring;
 import Local.Configuration.ConfigParser;
 import Local.Configuration.MainConfig;
 import Local.UI.QuantilesPlot;
+import Local.UI.UIMonitor;
 
 import java.io.*;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Controller {
     private int mode = Mode.ONLINE;
     private MainConfig config;
     private ClientCommunicator communicator = new ClientCommunicator();
     private static final String FILE_NAME = "result";
+    private Monitoring monitoring;
+
+    public void monitoring() throws Exception {
+        monitoring = new Monitoring(config);
+    }
 
     /**
      * connect to clients
@@ -58,9 +66,15 @@ public class Controller {
      */
     public void startTest() throws IOException {
         Queue<Long> globalQueue = new ConcurrentLinkedQueue<>();
-        communicator.startTesting(globalQueue);
+        AtomicInteger counter = new AtomicInteger(0);
+        communicator.startTesting(globalQueue, counter);
         if (!checkConfig(config)) {
             Interpreter.reportAboutError("wrong config");
+        }
+        if (monitoring != null) {
+            monitoring.start();
+            Thread t = new Thread(new UIMonitor(monitoring, counter, config.getUpdateTime()));
+            t.start();
         }
         if (mode == Mode.ONLINE) {
             Thread ui = new QuantilesPlot(config, globalQueue);
@@ -73,9 +87,15 @@ public class Controller {
 
     public void startLoginTest() throws IOException, InterruptedException {
         Queue<Long> globalQueue = new ConcurrentLinkedQueue<>();
-        communicator.startLoginTesting(globalQueue);
+        AtomicInteger counter = new AtomicInteger(0);
+        communicator.startLoginTesting(globalQueue, counter);
         if (!checkConfig(config)) {
             Interpreter.reportAboutError("wrong config");
+        }
+        if (monitoring != null) {
+            monitoring.start();
+            Thread t = new Thread(new UIMonitor(monitoring, counter, config.getUpdateTime()));
+            t.start();
         }
         if (mode == Mode.ONLINE) {
             Thread ui = new QuantilesPlot(config, globalQueue);
@@ -88,9 +108,15 @@ public class Controller {
 
     public void startRegisterTest() throws IOException, InterruptedException {
         Queue<Long> globalQueue = new ConcurrentLinkedQueue<>();
-        communicator.startRegisterTesting(globalQueue);
+        AtomicInteger counter = new AtomicInteger(0);
         if (!checkConfig(config)) {
             Interpreter.reportAboutError("wrong config");
+        }
+        communicator.startRegisterTesting(globalQueue, counter);
+        if (monitoring != null) {
+            monitoring.start();
+            Thread t = new Thread(new UIMonitor(monitoring, counter, config.getUpdateTime()));
+            t.start();
         }
         if (mode == Mode.ONLINE) {
             Thread ui = new QuantilesPlot(config, globalQueue);
