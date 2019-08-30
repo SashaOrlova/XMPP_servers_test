@@ -28,6 +28,13 @@ public class Monitoring {
         }
     }
 
+    /**
+     * Listen client, answer if need
+     * Send CPU and free memory
+     *
+     * @param socket
+     * @throws IOException
+     */
     private static void monitor(Socket socket) throws IOException {
         InputStream in;
         DataOutputStream out;
@@ -42,7 +49,15 @@ public class Monitoring {
 
         while (true) {
             if (in.available() > 0) {
-                in.read();
+                int command = in.read();
+
+                if (command == Commands.FINISH) {
+                    in.close();
+                    out.close();
+                    socket.close();
+                    return;
+                }
+
                 OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(
                         OperatingSystemMXBean.class);
 

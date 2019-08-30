@@ -25,7 +25,6 @@ public class UIMenu extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-
         primaryStage.setTitle("XMPP Tester");
         Button messageBtn = new Button("Start Messages Test");
         Button loginBtn = new Button("Start Login Test");
@@ -42,7 +41,7 @@ public class UIMenu extends Application {
         registerBtn.setOnAction((event) -> safeTestStart(() -> controller.startTest(),
                 Arrays.asList(messageBtn, loginBtn, registerBtn)));
 
-        monitorBtn.setOnAction((event) -> showMonitortBox());
+        monitorBtn.setOnAction((event) -> showMonitorBox());
         mode.setOnAction((event -> controller.switchMode(mode.isSelected() ? Mode.ONLINE : Mode.OFFLINE)));
 
         VBox vbox = new VBox(messageBtn, loginBtn, registerBtn, monitorBtn, mode);
@@ -53,6 +52,11 @@ public class UIMenu extends Application {
         primaryStage.show();
     }
 
+    /**
+     * Start test and handle exceptions
+     * @param test
+     * @param buttons
+     */
     private void safeTestStart(Procedure test, Collection<Button> buttons) {
         for (Button btn: buttons) {
             btn.setDisable(true);
@@ -68,14 +72,17 @@ public class UIMenu extends Application {
         }
     }
 
-    private void showMonitortBox() {
+    /**
+     * Show current CPU and memory of XMPP server
+     */
+    private void showMonitorBox() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Monitor info");
 
         try {
             Monitoring.Info info = controller.getMonitiring().monitor();
             alert.setHeaderText(null);
-            alert.setContentText("CPU: " + info.cpuUsage * 100 + "% Free memory: " + info.freeMemory + " bytes");
+            alert.setContentText("CPU: " + String.format("%.2g%n", info.cpuUsage * 100) + "% Free memory: " + info.freeMemory / 1024 + " kB");
         } catch (IOException e) {
             showAlertBox(e);
         }
@@ -83,6 +90,10 @@ public class UIMenu extends Application {
         alert.showAndWait();
     }
 
+    /**
+     * Report about exception
+     * @param e
+     */
     private void showAlertBox(Exception e) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Error");
